@@ -1,0 +1,11 @@
+name: schedule-probe-b
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+      timezone: 'Asia/Shanghai'
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe B
+        run: echo "probe-b event=${GITHUB_EVENT_NAME} schedule=${{ github.event.schedule }}"
