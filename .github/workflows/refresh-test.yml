@@ -17,37 +17,9 @@ concurrency:
 
 jobs:
   generate-html:
-    permissions:
-      contents: read
-      actions: read
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Read workflow scheduler state
-        id: scheduler_diagnostic
-        if: github.event_name == 'push' && github.event.head_commit.message == 'Read workflow scheduler state'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPOSITORY: ${{ github.repository }}
-        run: |
-          python3 - <<'PY'
-          import json, os, urllib.request
-          repo = os.environ["GH_REPOSITORY"]
-          url = f"https://api.github.com/repos/{repo}/actions/workflows/396782436"
-          headers = {"Authorization": "Bearer " + os.environ["GH_TOKEN"], "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2026-03-10"}
-          request = urllib.request.Request(url, headers=headers)
-          with urllib.request.urlopen(request, timeout=20) as response:
-              workflow = json.load(response)
-          assert workflow["path"] == ".github/workflows/refresh-test.yml"
-          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as stream:
-              stream.write("state=" + workflow["state"] + "\n")
-              stream.write("workflow_id=" + str(workflow["id"]) + "\n")
-          print("Workflow state:", workflow["state"])
-          PY
-
-      - name: "GitHub workflow state: ${{ steps.scheduler_diagnostic.outputs.state }}; id=${{ steps.scheduler_diagnostic.outputs.workflow_id }}"
-        if: steps.scheduler_diagnostic.outputs.state != ''
-        run: echo 'Read-only workflow state check complete.'
       - name: Run Python and generate test HTML
         env:
           RUN_NUMBER: ${{ github.run_number }}
