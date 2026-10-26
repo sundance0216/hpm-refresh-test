@@ -1,0 +1,58 @@
+name: HPM cloud refresh test
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/refresh-test.yml'
+  schedule:
+    - cron: '7,37 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hpm-cloud-refresh-test
+  cancel-in-progress: false
+
+jobs:
+  generate-html:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Run Python and generate test HTML
+        env:
+          RUN_NUMBER: ${{ github.run_number }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from datetime import datetime, timezone, timedelta
+          from html import escape
+          from pathlib import Path
+
+          stamp = datetime.now(timezone(timedelta(hours=9))).isoformat(timespec='seconds')
+          run = escape(os.environ['RUN_NUMBER'])
+          event = escape(os.environ['EVENT_NAME'])
+          report = f'''<!doctype html>
+          <html lang="ja"><meta charset="utf-8"><title>Cloud refresh test</title>
+          <body><h1>Python cloud refresh test</h1>
+          <p>Test only. No company reports are connected.</p>
+          <p>Generated at (Japan): {stamp}</p>
+          <p>Run: {run}</p><p>Trigger: {event}</p></body></html>'''
+          target = Path('output/refresh-test.html')
+          target.parent.mkdir(exist_ok=True)
+          target.write_text(report, encoding='utf-8')
+          assert stamp in target.read_text(encoding='utf-8')
+          print(f'PASS: Python generated HTML at {stamp}; trigger={event}; run={run}')
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as f:
+              f.write(f'Python completed. Japan time: {stamp}. Run: {run}. Trigger: {event}.\n')
+          PY
+
+      - name: Save test HTML
+        uses: actions/upload-artifact@v7
+        with:
+          name: refresh-test-${{ github.run_number }}
+          path: output/refresh-test.html
+          if-no-files-found: error
+          retention-days: 2
