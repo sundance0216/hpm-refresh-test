@@ -1,0 +1,48 @@
+name: HPM cloud refresh scheduler
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
+      timezone: 'Asia/Shanghai'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hpm-cloud-refresh-scheduler
+  cancel-in-progress: false
+
+jobs:
+  scheduler-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify trigger source
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SCHEDULE: ${{ github.event.schedule }}
+        run: |
+          echo "event_name=${EVENT_NAME}"
+          echo "event_schedule=${SCHEDULE:-<none>}"
+          echo "utc_now=$(date -u --iso-8601=seconds)"
+          echo "shanghai_now=$(TZ=Asia/Shanghai date --iso-8601=seconds)"
+
+      - name: Start Python wake-up probe
+        env:
+          RUN_NUMBER: ${{ github.run_number }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_SCHEDULE: ${{ github.event.schedule }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from datetime import datetime, timezone, timedelta
+
+          stamp = datetime.now(timezone(timedelta(hours=8))).isoformat(timespec='seconds')
+          run = os.environ['RUN_NUMBER']
+          event = os.environ['EVENT_NAME']
+          schedule = os.environ.get('EVENT_SCHEDULE', '') or '<none>'
+          print(f'PASS: Python started at {stamp}; run={run}; trigger={event}; schedule={schedule}')
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as summary:
+              summary.write(f'Python started at {stamp}. Run: {run}. Trigger: {event}. Schedule: {schedule}.\n')
+          PY
