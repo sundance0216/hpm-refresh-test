@@ -6,7 +6,7 @@ on:
     paths:
       - '.github/workflows/refresh-test.yml'
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '7,37 * * * *'
 
 permissions:
   contents: read
