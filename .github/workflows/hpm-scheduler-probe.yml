@@ -1,13 +1,17 @@
 name: HPM scheduler probe
 
+
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '47-59/5 * * * *'→ Runs every 5 minutes
+
       timezone: 'Asia/Shanghai'
+
 
 permissions:
   contents: read
+
 
 jobs:
   probe:
@@ -27,3 +31,4 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
         run: |
           python3 -c "import os; print('PASS: Python started; trigger=' + os.environ['EVENT_NAME'])"
+
