@@ -1,13 +1,16 @@
 name: HPM cloud refresh test
 
+# 配置参照可正常触发的参考仓库：
+#   - schedule 放在第一个触发器
+#   - 使用低频 cron（*/5 这类高频 cron 在 GitHub 调度器上容易被延迟或丢弃）
+#   - 不使用 timezone 字段
 on:
-  workflow_dispatch:
-  push:
-    paths:
-      - '.github/workflows/refresh-test.yml'
   schedule:
-    - cron: '*/5 * * * *'
-      timezone: 'Asia/Shanghai'
+    # 生产：周一至周五 UTC 10:00 = 北京时间 18:00（与参考仓库一致）
+    - cron: '0 10 * * 1-5'
+    # 临时验证：每 10 分钟一次，确认 schedule 恢复触发后删除此行
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -21,6 +24,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - name: Random jitter
+        run: sleep $((RANDOM % 60))
+
       - name: Verify trigger source
         env:
           EVENT_NAME: ${{ github.event_name }}
