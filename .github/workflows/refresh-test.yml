@@ -56,3 +56,5 @@ jobs:
           path: output/refresh-test.html
           if-no-files-found: error
           retention-days: 2
+
+# One-time execution probe requested by the repository owner; workflow behavior is unchanged.
