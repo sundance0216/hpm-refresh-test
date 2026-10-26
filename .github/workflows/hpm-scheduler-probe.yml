@@ -1,0 +1,29 @@
+name: HPM scheduler probe
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
+      timezone: 'Asia/Shanghai'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify trigger source
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_SCHEDULE: ${{ github.event.schedule }}
+        run: |
+          echo "event_name=${EVENT_NAME}"
+          echo "event_schedule=${EVENT_SCHEDULE:-<none>}"
+          echo "utc_now=$(date -u --iso-8601=seconds)"
+          echo "shanghai_now=$(TZ=Asia/Shanghai date --iso-8601=seconds)"
+      - name: Start Python
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          python3 -c "import os; print('PASS: Python started; trigger=' + os.environ['EVENT_NAME'])"
