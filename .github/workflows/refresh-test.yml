@@ -10,6 +10,8 @@ on:
 
 permissions:
   contents: read
+  pages: write
+  id-token: write
 
 concurrency:
   group: hpm-cloud-refresh-test
@@ -19,6 +21,9 @@ jobs:
   generate-html:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Random jitter
         run: sleep $((RANDOM % 60))
@@ -62,6 +67,7 @@ jobs:
           target = Path('output/refresh-test.html')
           target.parent.mkdir(exist_ok=True)
           target.write_text(report, encoding='utf-8')
+          Path('output/index.html').write_text(report, encoding='utf-8')
           assert stamp in target.read_text(encoding='utf-8')
           print(f'PASS: Python generated HTML at {stamp}; trigger={event}; run={run}')
           with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as f:
@@ -75,3 +81,12 @@ jobs:
           path: output/refresh-test.html
           if-no-files-found: error
           retention-days: 2
+
+      - name: Prepare GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: output
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
